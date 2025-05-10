@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UF GPA Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4F46E5',
+                        uf: {
+                            blue: '#0021A5',
+                            orange: '#FA4616'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        .course-row-enter {
+            animation: slideDown 0.3s ease-out forwards;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-hover {
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-3px);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Grade button styles */
+        .grade-btn {
+            transition: all 0.2s;
+        }
+        
+        .grade-btn.active {
+            transform: scale(1.05);
+        }
+        
+        /* Focus styles */
+        input:focus, select:focus {
+            outline: 2px solid #5D5CDE;
+            outline-offset: 1px;
+        }
+        
+        .dark input:focus, .dark select:focus {
+            outline: 2px solid #6D6DF7;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="mb-8 relative">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="bg-gradient-to-r from-uf-blue to-uf-orange p-2 rounded-lg mr-3">
+                        <i class="fas fa-calculator text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-bold">UF GPA Calculator</h1>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-moon dark:hidden text-gray-700"></i>
+                        <i class="fas fa-sun hidden dark:block text-yellow-300"></i>
+                    </button>
+                    <button id="infoBtn" class="text-primary dark:text-blue-400 hover:underline flex items-center">
+                        <i class="fas fa-info-circle mr-1"></i> GPA Info
+                    </button>
+                    <button id="helpBtn" class="text-primary dark:text-blue-400 hover:underline flex items-center">
+                        <i class="fas fa-question-circle mr-1"></i> Help
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <div class="flex mt-6 border-b border-gray-200 dark:border-gray-700">
+                <button class="nav-tab active py-2 px-4 font-medium focus:outline-none border-b-2 border-primary dark:border-blue-400 text-primary dark:text-blue-400" data-tab="calculator">
+                    Calculator
+                </button>
+                <button class="nav-tab py-2 px-4 font-medium focus:outline-none border-b-2 border-transparent hover:text-primary dark:hover:text-blue-400" data-tab="cumulative">
+                    Cumulative GPA
+                </button>
+                <button class="nav-tab py-2 px-4 font-medium focus:outline-none border-b-2 border-transparent hover:text-primary dark:hover:text-blue-400" data-tab="about">
+                    About
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main>
+            <!-- Calculator Tab -->
+            <div id="calculator-tab" class="tab-content">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 animate-fade-in">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class="fas fa-graduation-cap mr-2 text-uf-orange"></i>
+                            Semester GPA Calculator
+                        </h2>
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">
+                            Enter your courses, credits, and grades to calculate your semester GPA.
+                        </p>
+                        
+                        <!-- Course Input Form -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full mb-4">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Course</th>
+                                        <th class="text-left py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Credits</th>
+                                        <th class="text-left py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Grade</th>
+                                        <th class="text-left py-2 px-2 text-sm font-medium text-gray-500 dark:text-gray-400">Points</th>
+                                        <th class="w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="courseList">
+                                    <!-- Course rows will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row md:justify-between items-start md:items-center">
+                            <button id="addCourseBtn" class="mb-4 md:mb-0 flex items-center px-4 py-2 bg-primary hover:bg-secondary text-white rounded-lg transition-colors">
+                                <i class="fas fa-plus mr-2"></i> Add Course
+                            </button>
+                            
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="flex-1 min-w-fit">
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Total Credits:</span>
+                                    <span id="totalCredits" class="font-semibold ml-1">0</span>
+                                </div>
+                                <div class="flex-1 min-w-fit">
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Total Points:</span>
+                                    <span id="totalPoints" class="font-semibold ml-1">0</span>
+                                </div>
+                                <div class="flex-1 min-w-fit">
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">GPA:</span>
+                                    <span id="gpaResult" class="font-bold text-lg ml-1 text-uf-blue dark:text-blue-400">0.00</span>
+                                </div>
+                                <div class="flex-1 min-w-fit">
+                                    <button id="downloadGpaBtn" class="ml-1 px-3 py-1 text-sm bg-uf-blue text-white rounded hover:bg-opacity-90 transition-all flex items-center">
+                                        <i class="fas fa-download mr-1"></i> Download
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- GPA Scale Reference -->
+                    <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h3 class="text-lg font-medium mb-3">GPA Scale Reference</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">A</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">4.0</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">A-</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">3.67</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">B+</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">3.33</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">B</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">3.0</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">B-</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">2.67</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">C+</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">2.33</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">C</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">2.0</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">C-</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">1.67</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">D+</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">1.33</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">D</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">1.0</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">D-</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">0.67</div>
+                            </div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
+                                <div class="font-medium">F</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">0.0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cumulative GPA Tab -->
+            <div id="cumulative-tab" class="tab-content hidden animate-fade-in">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-uf-blue"></i>
+                        Cumulative GPA Calculator
+                    </h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">
+                        Calculate your cumulative GPA by entering your current GPA, credits earned, and new semester information.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h3 class="font-medium mb-3 text-gray-700 dark:text-gray-300">Previous Academic Record</h3>
+                            <div class="mb-4">
+                                <label for="prevGPA" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Current Cumulative GPA</label>
+                                <input type="number" id="prevGPA" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-base" placeholder="e.g. 3.5" min="0" max="4" step="0.01">
+                            </div>
+                            <div>
+                                <label for="prevCredits" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Credits Earned</label>
+                                <input type="number" id="prevCredits" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-base" placeholder="e.g. 60" min="0" step="1">
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h3 class="font-medium mb-3 text-gray-700 dark:text-gray-300">New Semester</h3>
+                            <div class="mb-4">
+                                <label for="newGPA" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">New Semester GPA</label>
+                                <input type="number" id="newGPA" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-base" placeholder="e.g. 3.7" min="0" max="4" step="0.01">
+                            </div>
+                            <div>
+                                <label for="newCredits" class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">New Credits</label>
+                                <input type="number" id="newCredits" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-base" placeholder="e.g. 15" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center">
+                        <button id="calculateCumulativeBtn" class="px-6 py-2 bg-primary hover:bg-secondary text-white rounded-lg transition-colors">
+                            Calculate Cumulative GPA
+                        </button>
+                    </div>
+                    
+                    <!-- Results -->
+                    <div id="cumulativeResults" class="mt-8 hidden">
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <h3 class="text-lg font-medium mb-4">Results</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center card-hover">
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Total Credits</div>
+                                    <div id="totalCumulativeCredits" class="text-2xl font-bold text-gray-800 dark:text-white">0</div>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center card-hover">
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Cumulative GPA</div>
+                                    <div id="cumulativeGPA" class="text-2xl font-bold text-uf-blue dark:text-blue-400">0.00</div>
+                                </div>
+                                <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg text-center card-hover">
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">GPA Change</div>
+                                    <div id="gpaChange" class="text-2xl font-bold">0.00</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 flex justify-center">
+                                <button id="downloadCumulativeBtn" class="px-4 py-2 bg-uf-blue text-white rounded-lg hover:bg-opacity-90 transition-all flex items-center">
+                                    <i class="fas fa-download mr-2"></i> Download Cumulative GPA Report
+                                </button>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">GPA Progress</div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                                    <div id="gpaProgressBar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background-color: #0021A5;"></div>
+                                </div>
+                                <div class="flex justify-between text-xs mt-1">
+                                    <span>0.0</span>
+                                    <span>1.0</span>
+                                    <span>2.0</span>
+                                    <span>3.0</span>
+                                    <span>4.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- About Tab -->
+            <div id="about-tab" class="tab-content hidden animate-fade-in">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-university mr-2 text-uf-blue"></i>
+                        About GPA Calculation
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">What is GPA?</h3>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                Grade Point Average (GPA) is a standardized measurement of academic achievement in U.S. universities and colleges. 
+                                It's calculated by dividing the total number of grade points earned by the total number of credit hours attempted.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">GPA Scale at UF</h3>
+                            <p class="text-gray-600 dark:text-gray-300 mb-4">
+                                The University of Florida uses a 4.0 GPA scale. Each letter grade corresponds to a specific grade point value:
+                            </p>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-100 dark:bg-gray-700">
+                                            <th class="py-2 px-4 border border-gray-200 dark:border-gray-600 text-left">Letter Grade</th>
+                                            <th class="py-2 px-4 border border-gray-200 dark:border-gray-600 text-left">Grade Points</th>
+                                            <th class="py-2 px-4 border border-gray-200 dark:border-gray-600 text-left">Percentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">A</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">4.0</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">93-100%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">A-</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.67</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">90-92%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">B+</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.33</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">87-89%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">B</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.0</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">83-86%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">B-</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">2.67</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">80-82%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">C+</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">2.33</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">77-79%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">C</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">2.0</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">73-76%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">C-</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">1.67</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">70-72%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">D+</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">1.33</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">67-69%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">D</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">1.0</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">63-66%</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">D-</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">0.67</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">60-62%</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">F</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">0.0</td>
+                                            <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">Below 60%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">How GPA is Calculated</h3>
+                            <p class="text-gray-600 dark:text-gray-300 mb-3">
+                                The GPA calculation formula is:
+                            </p>
+                            <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg mb-3">
+                                <p class="font-mono">GPA = (Total Grade Points) ÷ (Total Credit Hours)</p>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-300">
+                                To find your total grade points, multiply the grade point value of each grade by the number of credit hours for that course, then add these values together.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">GPA Requirements at UF</h3>
+                            <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                                <li>Minimum GPA required for graduation: 2.0</li>
+                                <li>Dean's List: 3.5 or higher</li>
+                                <li>President's Honor Roll: 4.0</li>
+                                <li>Many UF majors have specific GPA requirements for admission to the program</li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">Different Types of GPA</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <h4 class="font-medium text-gray-700 dark:text-gray-300">Term GPA</h4>
+                                    <p class="text-gray-600 dark:text-gray-300">The GPA earned in a single semester or term.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-700 dark:text-gray-300">Cumulative GPA</h4>
+                                    <p class="text-gray-600 dark:text-gray-300">The overall GPA for all semesters/terms combined.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-700 dark:text-gray-300">Major GPA</h4>
+                                    <p class="text-gray-600 dark:text-gray-300">The GPA for courses in your major only.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal for Help/FAQ -->
+            <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold">Help & FAQ</h2>
+                            <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-medium text-lg mb-2">How to Use the GPA Calculator</h3>
+                                <ol class="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-300">
+                                    <li>Click the <strong>Add Course</strong> button to add a new course row.</li>
+                                    <li>Enter the course name (optional).</li>
+                                    <li>Enter the number of credit hours for the course.</li>
+                                    <li>Select the grade you received (or expect to receive).</li>
+                                    <li>The calculator will automatically update your GPA.</li>
+                                    <li>To remove a course, click the trash icon next to the course row.</li>
+                                </ol>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-medium text-lg mb-2">Frequently Asked Questions</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 dark:text-gray-300">What is a good GPA at UF?</h4>
+                                        <p class="text-gray-600 dark:text-gray-300">
+                                            At UF, a GPA of 3.0 or higher is generally considered good. A GPA of 3.5 or higher may qualify you for the Dean's List, and a 4.0 GPA may qualify you for the President's Honor Roll.
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 dark:text-gray-300">How do I calculate my cumulative GPA?</h4>
+                                        <p class="text-gray-600 dark:text-gray-300">
+                                            Switch to the "Cumulative GPA" tab, enter your current cumulative GPA, total credits earned, and your new semester information.
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 dark:text-gray-300">Do pass/fail courses affect my GPA?</h4>
+                                        <p class="text-gray-600 dark:text-gray-300">
+                                            No, pass/fail courses (marked as S/U at UF) do not count toward your GPA calculation.
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 dark:text-gray-300">How can I raise my GPA?</h4>
+                                        <p class="text-gray-600 dark:text-gray-300">
+                                            To raise your GPA, you need to earn higher grades in future courses. The more credit hours you've already completed, the harder it becomes to significantly change your cumulative GPA.
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h4 class="font-medium text-gray-700 dark:text-gray-300">What GPA do I need to graduate?</h4>
+                                        <p class="text-gray-600 dark:text-gray-300">
+                                            At UF, you generally need a minimum 2.0 cumulative GPA to graduate, though some majors have higher requirements.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal for GPA Info -->
+            <div id="infoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold">UF GPA Information</h2>
+                            <button id="closeInfoBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-medium text-lg mb-2">University of Florida GPA System</h3>
+                                <p class="text-gray-600 dark:text-gray-300 mb-3">
+                                    The University of Florida uses a 4.0 grading scale. Your GPA is important for many reasons:
+                                </p>
+                                <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                                    <li>Academic standing and continued enrollment</li>
+                                    <li>Admission to limited-access majors</li>
+                                    <li>Eligibility for scholarships and financial aid</li>
+                                    <li>Qualification for academic honors</li>
+                                    <li>Graduate school applications</li>
+                                    <li>Job applications after graduation</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-medium text-lg mb-2">Important UF GPA Thresholds</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border-collapse">
+                                        <thead>
+                                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                                <th class="py-2 px-4 border border-gray-200 dark:border-gray-600 text-left">Achievement</th>
+                                                <th class="py-2 px-4 border border-gray-200 dark:border-gray-600 text-left">GPA Requirement</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">Good Academic Standing</td>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">2.0+</td>
+                                            </tr>
+                                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">Dean's List</td>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.5+</td>
+                                            </tr>
+                                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">President's Honor Roll</td>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">4.0</td>
+                                            </tr>
+                                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">Cum Laude</td>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.5+</td>
+                                            </tr>
+                                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">Magna Cum Laude</td>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.75+</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">Summa Cum Laude</td>
+                                                <td class="py-2 px-4 border border-gray-200 dark:border-gray-600">3.9+</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                    Note: Specific college and department requirements may vary.
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-medium text-lg mb-2">GPA Calculation Details</h3>
+                                <p class="text-gray-600 dark:text-gray-300 mb-3">
+                                    The University of Florida calculates several different types of GPAs:
+                                </p>
+                                <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                                    <li><strong>Term GPA:</strong> Grades earned in a single semester</li>
+                                    <li><strong>UF GPA:</strong> All grades earned at UF</li>
+                                    <li><strong>Overall GPA:</strong> Includes transfer credits</li>
+                                    <li><strong>Major GPA:</strong> Only courses in your major</li>
+                                    <li><strong>Upper Division GPA:</strong> Only 3000-4000 level courses</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>University of Florida GPA Calculator &copy; 2023</p>
+            <p class="mt-1">This calculator is for informational purposes only and is not affiliated with the University of Florida.</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Initialize course counter
+        let courseCounter = 0;
+        
+        // Define grade values
+        const gradeValues = {
+            'A': 4.0,
+            'A-': 3.67,
+            'B+': 3.33,
+            'B': 3.0,
+            'B-': 2.67,
+            'C+': 2.33,
+            'C': 2.0,
+            'C-': 1.67,
+            'D+': 1.33,
+            'D': 1.0,
+            'D-': 0.67,
+            'F': 0.0
+        };
+        
+        // DOM ready function
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for dark mode
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            // Dark mode toggle listener
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+            
+            // Initialize with 4 empty courses
+            for (let i = 0; i < 4; i++) {
+                addCourse();
+            }
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // Add course button
+            document.getElementById('addCourseBtn').addEventListener('click', addCourse);
+            
+            // Theme toggle
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Navigation tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+            
+            // Calculate cumulative GPA button
+            document.getElementById('calculateCumulativeBtn').addEventListener('click', calculateCumulativeGPA);
+            
+            // Download GPA Data button
+            document.getElementById('downloadGpaBtn').addEventListener('click', downloadSemesterGPA);
+            
+            // Download Cumulative GPA button
+            document.getElementById('downloadCumulativeBtn').addEventListener('click', downloadCumulativeGPA);
+            
+            // Help button
+            document.getElementById('helpBtn').addEventListener('click', () => {
+                document.getElementById('helpModal').classList.remove('hidden');
+            });
+            
+            // Close help modal
+            document.getElementById('closeHelpBtn').addEventListener('click', () => {
+                document.getElementById('helpModal').classList.add('hidden');
+            });
+            
+            // Info button
+            document.getElementById('infoBtn').addEventListener('click', () => {
+                document.getElementById('infoModal').classList.remove('hidden');
+            });
+            
+            // Close info modal
+            document.getElementById('closeInfoBtn').addEventListener('click', () => {
+                document.getElementById('infoModal').classList.add('hidden');
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                const helpModal = document.getElementById('helpModal');
+                const infoModal = document.getElementById('infoModal');
+                
+                if (e.target === helpModal) {
+                    helpModal.classList.add('hidden');
+                }
+                
+                if (e.target === infoModal) {
+                    infoModal.classList.add('hidden');
+                }
+            });
+        }
+        
+        function addCourse() {
+            courseCounter++;
+            const courseList = document.getElementById('courseList');
+            const newRow = document.createElement('tr');
+            newRow.id = `course-${courseCounter}`;
+            newRow.className = 'border-b border-gray-200 dark:border-gray-700 course-row-enter';
+            
+            newRow.innerHTML = `
+                <td class="py-2 px-2">
+                    <input type="text" class="courseInput w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-base" placeholder="Course name">
+                </td>
+                <td class="py-2 px-2">
+                    <select class="creditSelect w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-base">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </td>
+                <td class="py-2 px-2">
+                    <div class="grade-selector flex flex-wrap gap-1">
+                        ${Object.keys(gradeValues).map(grade => 
+                            `<button data-grade="${grade}" class="grade-btn w-9 h-9 flex items-center justify-center border border-gray-300 dark:border-gray-600 rounded text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">${grade}</button>`
+                        ).join('')}
+                    </div>
+                </td>
+                <td class="py-2 px-2">
+                    <span class="coursePoints font-medium">0.00</span>
+                </td>
+                <td class="py-2 px-2 text-center">
+                    <button class="deleteCourseBtn text-red-500 hover:text-red-700 transition-colors">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            
+            courseList.appendChild(newRow);
+            
+            // Add event listeners for new row
+            const gradeButtons = newRow.querySelectorAll('.grade-btn');
+            gradeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all grade buttons in this row
+                    gradeButtons.forEach(b => b.classList.remove('active', 'bg-primary', 'text-white'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active', 'bg-primary', 'text-white');
+                    
+                    // Update points and GPA
+                    updateCoursePoints(newRow);
+                    calculateGPA();
+                });
+            });
+            
+            // Add event listener for credit select
+            newRow.querySelector('.creditSelect').addEventListener('change', function() {
+                updateCoursePoints(newRow);
+                calculateGPA();
+            });
+            
+            // Add event listener for delete button
+            newRow.querySelector('.deleteCourseBtn').addEventListener('click', function() {
+                newRow.classList.add('opacity-0');
+                setTimeout(() => {
+                    newRow.remove();
+                    calculateGPA();
+                }, 300);
+            });
+        }
+        
+        function updateCoursePoints(courseRow) {
+            const creditSelect = courseRow.querySelector('.creditSelect');
+            const activeGradeBtn = courseRow.querySelector('.grade-btn.active');
+            const pointsSpan = courseRow.querySelector('.coursePoints');
+            
+            if (activeGradeBtn) {
+                const grade = activeGradeBtn.dataset.grade;
+                const credits = parseFloat(creditSelect.value);
+                const gradeValue = gradeValues[grade];
+                const points = gradeValue * credits;
+                
+                pointsSpan.textContent = points.toFixed(2);
+            } else {
+                pointsSpan.textContent = '0.00';
+            }
+        }
+        
+        function calculateGPA() {
+            let totalCredits = 0;
+            let totalPoints = 0;
+            
+            document.querySelectorAll('#courseList tr').forEach(row => {
+                const creditSelect = row.querySelector('.creditSelect');
+                const activeGradeBtn = row.querySelector('.grade-btn.active');
+                
+                if (activeGradeBtn) {
+                    const grade = activeGradeBtn.dataset.grade;
+                    const credits = parseFloat(creditSelect.value);
+                    const gradeValue = gradeValues[grade];
+                    
+                    totalCredits += credits;
+                    totalPoints += (gradeValue * credits);
+                }
+            });
+            
+            const gpa = totalCredits > 0 ? totalPoints / totalCredits : 0;
+            
+            // Update displayed values
+            document.getElementById('totalCredits').textContent = totalCredits.toFixed(1);
+            document.getElementById('totalPoints').textContent = totalPoints.toFixed(2);
+            document.getElementById('gpaResult').textContent = gpa.toFixed(2);
+            
+            // Update color based on GPA
+            const gpaResult = document.getElementById('gpaResult');
+            if (gpa >= 3.5) {
+                gpaResult.className = 'font-bold text-lg ml-1 text-green-600 dark:text-green-400';
+            } else if (gpa >= 2.0) {
+                gpaResult.className = 'font-bold text-lg ml-1 text-uf-blue dark:text-blue-400';
+            } else {
+                gpaResult.className = 'font-bold text-lg ml-1 text-red-600 dark:text-red-400';
+            }
+        }
+        
+        function calculateCumulativeGPA() {
+            const prevGPA = parseFloat(document.getElementById('prevGPA').value) || 0;
+            const prevCredits = parseFloat(document.getElementById('prevCredits').value) || 0;
+            const newGPA = parseFloat(document.getElementById('newGPA').value) || 0;
+            const newCredits = parseFloat(document.getElementById('newCredits').value) || 0;
+            
+            if (prevCredits === 0 && newCredits === 0) {
+                // Can't calculate if no credits are provided
+                return;
+            }
+            
+            const prevPoints = prevGPA * prevCredits;
+            const newPoints = newGPA * newCredits;
+            const totalCredits = prevCredits + newCredits;
+            const cumulativeGPA = (prevPoints + newPoints) / totalCredits;
+            const gpaChange = cumulativeGPA - prevGPA;
+            
+            // Display results
+            document.getElementById('cumulativeResults').classList.remove('hidden');
+            document.getElementById('totalCumulativeCredits').textContent = totalCredits.toFixed(1);
+            document.getElementById('cumulativeGPA').textContent = cumulativeGPA.toFixed(2);
+            
+            const gpaChangeElement = document.getElementById('gpaChange');
+            if (gpaChange > 0) {
+                gpaChangeElement.textContent = '+' + gpaChange.toFixed(2);
+                gpaChangeElement.className = 'text-2xl font-bold text-green-600 dark:text-green-400';
+            } else if (gpaChange < 0) {
+                gpaChangeElement.textContent = gpaChange.toFixed(2);
+                gpaChangeElement.className = 'text-2xl font-bold text-red-600 dark:text-red-400';
+            } else {
+                gpaChangeElement.textContent = '0.00';
+                gpaChangeElement.className = 'text-2xl font-bold text-gray-600 dark:text-gray-400';
+            }
+            
+            // Update progress bar
+            const progressBar = document.getElementById('gpaProgressBar');
+            const progressPercentage = (cumulativeGPA / 4) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+            
+            // Change progress bar color based on GPA
+            if (cumulativeGPA >= 3.5) {
+                progressBar.style.backgroundColor = '#22C55E'; // Green
+            } else if (cumulativeGPA >= 2.0) {
+                progressBar.style.backgroundColor = '#0021A5'; // UF Blue
+            } else {
+                progressBar.style.backgroundColor = '#EF4444'; // Red
+            }
+        }
+        
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            // Update theme toggle icon
+            const moonIcon = document.querySelector('#themeToggle .fa-moon');
+            const sunIcon = document.querySelector('#themeToggle .fa-sun');
+            
+            if (document.documentElement.classList.contains('dark')) {
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+            } else {
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+            }
+        }
+        
+        function downloadSemesterGPA() {
+            // Collect course data
+            const courses = [];
+            let totalCredits = 0;
+            let totalPoints = 0;
+            
+            document.querySelectorAll('#courseList tr').forEach(row => {
+                const courseName = row.querySelector('.courseInput').value.trim() || 'Unnamed Course';
+                const creditSelect = row.querySelector('.creditSelect');
+                const activeGradeBtn = row.querySelector('.grade-btn.active');
+                
+                if (activeGradeBtn) {
+                    const credits = parseFloat(creditSelect.value);
+                    const grade = activeGradeBtn.dataset.grade;
+                    const gradeValue = gradeValues[grade];
+                    const points = gradeValue * credits;
+                    
+                    courses.push({
+                        name: courseName,
+                        credits: credits,
+                        grade: grade,
+                        points: points
+                    });
+                    
+                    totalCredits += credits;
+                    totalPoints += points;
+                }
+            });
+            
+            // Calculate GPA
+            const gpa = totalCredits > 0 ? totalPoints / totalCredits : 0;
+            
+            // Create CSV content
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += 'UF GPA Calculator - Semester Report\r\n\r\n';
+            csvContent += 'Course,Credits,Grade,Grade Points\r\n';
+            
+            courses.forEach(course => {
+                csvContent += `${course.name},${course.credits},${course.grade},${course.points.toFixed(2)}\r\n`;
+            });
+            
+            csvContent += '\r\nSummary\r\n';
+            csvContent += `Total Credits,${totalCredits.toFixed(1)}\r\n`;
+            csvContent += `Total Grade Points,${totalPoints.toFixed(2)}\r\n`;
+            csvContent += `Semester GPA,${gpa.toFixed(2)}\r\n`;
+            csvContent += '\r\nGenerated on ' + new Date().toLocaleDateString();
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `UF_Semester_GPA_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            
+            // Clean up
+            document.body.removeChild(link);
+        }
+        
+        function downloadCumulativeGPA() {
+            const prevGPA = parseFloat(document.getElementById('prevGPA').value) || 0;
+            const prevCredits = parseFloat(document.getElementById('prevCredits').value) || 0;
+            const newGPA = parseFloat(document.getElementById('newGPA').value) || 0;
+            const newCredits = parseFloat(document.getElementById('newCredits').value) || 0;
+            
+            if (prevCredits === 0 && newCredits === 0) {
+                // Can't calculate if no credits are provided
+                return;
+            }
+            
+            const prevPoints = prevGPA * prevCredits;
+            const newPoints = newGPA * newCredits;
+            const totalCredits = prevCredits + newCredits;
+            const cumulativeGPA = (prevPoints + newPoints) / totalCredits;
+            const gpaChange = cumulativeGPA - prevGPA;
+            
+            // Create CSV content
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += 'UF GPA Calculator - Cumulative GPA Report\r\n\r\n';
+            csvContent += 'Component,Credits,GPA,Grade Points\r\n';
+            csvContent += `Previous Academic Record,${prevCredits.toFixed(1)},${prevGPA.toFixed(2)},${prevPoints.toFixed(2)}\r\n`;
+            csvContent += `New Semester,${newCredits.toFixed(1)},${newGPA.toFixed(2)},${newPoints.toFixed(2)}\r\n`;
+            csvContent += '\r\nResults\r\n';
+            csvContent += `Total Credits,${totalCredits.toFixed(1)}\r\n`;
+            csvContent += `Cumulative GPA,${cumulativeGPA.toFixed(2)}\r\n`;
+            csvContent += `GPA Change,${gpaChange > 0 ? '+' : ''}${gpaChange.toFixed(2)}\r\n`;
+            
+            // Add academic standing assessment
+            let standing = '';
+            if (cumulativeGPA >= 3.9) {
+                standing = 'Summa Cum Laude';
+            } else if (cumulativeGPA >= 3.75) {
+                standing = 'Magna Cum Laude';
+            } else if (cumulativeGPA >= 3.5) {
+                standing = 'Cum Laude / Dean\'s List';
+            } else if (cumulativeGPA >= 3.0) {
+                standing = 'Good Academic Standing';
+            } else if (cumulativeGPA >= 2.0) {
+                standing = 'Satisfactory';
+            } else {
+                standing = 'Academic Warning';
+            }
+            
+            csvContent += `Academic Standing,${standing}\r\n`;
+            csvContent += '\r\nGenerated on ' + new Date().toLocaleDateString();
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `UF_Cumulative_GPA_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            
+            // Clean up
+            document.body.removeChild(link);
+        }
+        
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Deactivate all tab buttons
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-primary', 'dark:border-blue-400', 'text-primary', 'dark:text-blue-400');
+                tab.classList.add('border-transparent');
+            });
+            
+            // Show selected tab content
+            document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+            
+            // Activate selected tab button
+            const activeTab = document.querySelector(`.nav-tab[data-tab="${tabId}"]`);
+            activeTab.classList.add('active', 'border-primary', 'dark:border-blue-400', 'text-primary', 'dark:text-blue-400');
+            activeTab.classList.remove('border-transparent');
+        }
+    </script>
+</body>
+</html>
